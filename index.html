@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — King's Gambit</title>
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/login.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+
+  <div class="loginBox glass">
+    <div class="logo"><i class="fa-solid fa-chess-pawn"></i></div>
+    <h2>King's Gambit</h2>
+    <p id="loginStatus">Enter your team passkey to join</p>
+
+    <div class="loginInputs">
+      <input type="text" id="teamPass" placeholder="e.g. AB1234" maxlength="10">
+    </div>
+
+    <button id="loginBtn" onclick="attemptLogin()">
+      <i class="fa-solid fa-chess-king"></i> Enter the Arena
+    </button>
+  </div> <!-- Floating Preview Button -->
+  <a href="preview.html" target="_blank" class="previewBtn">
+    <i class="fa-solid fa-eye"></i> Preview
+  </a>
+  <footer class="site-footer">
+    &copy; <span id="footerYear"></span> TRAIN 303. ALL RIGHTS RESERVED.
+  </footer>
+  <script>document.getElementById('footerYear').innerText = new Date().getFullYear();</script>
+  <script src="js/modals.js"></script>
+  <script src="js/login.js"></script>
+</body>
+
+</html>
