@@ -1,4 +1,3 @@
-/* === Core Variables === */
 :root {
     --bg-url: url('https://images.unsplash.com/photo-1709927628742-c3da31d7707f');
     --primary: #00c3ff;
@@ -8,7 +7,6 @@
     --border: rgba(255, 255, 255, 0.1);
 }
 
-/* === Base Styles === */
 html {
     background-color: var(--bg-dark);
     font-family: 'Outfit', sans-serif;
@@ -29,14 +27,12 @@ body {
     display: none;
 }
 
-/* === Utility Classes === */
 .glass {
     background: var(--card-bg);
     backdrop-filter: blur(12px);
     border: 1px solid var(--border);
 }
 
-/* === Quiz Display === */
 .quizDisplay {
     display: flex;
     flex-direction: column;
@@ -78,7 +74,6 @@ body {
 }
 
 /* Announcement Overlay */
-/* === Announcement Overlay === */
 .announcement-overlay {
     position: fixed;
     inset: 0;
@@ -138,7 +133,6 @@ body {
 }
 
 /* Freeze Overlay */
-/* === Freeze Overlay === */
 #freezeOverlay {
     position: fixed;
     inset: 0;
@@ -174,7 +168,6 @@ body {
     font-size: 1.1rem;
 }
 
-/* === Footer === */
 .site-footer {
     position: fixed;
     bottom: 12px;

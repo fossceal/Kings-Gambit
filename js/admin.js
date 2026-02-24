@@ -1168,12 +1168,7 @@ async function loadViolations() {
             }
 
             list.innerHTML = violations.map(v => {
-                // Handle different DB date formats (SQLite datetime vs ISO)
-                let ts = null;
-                if (v.timestamp) {
-                    const isoStr = v.timestamp.replace(' ', 'T') + (v.timestamp.includes('Z') ? '' : 'Z');
-                    ts = new Date(isoStr);
-                }
+                const ts = v.timestamp ? new Date(v.timestamp + 'Z') : null;
                 const timeStr = ts && !isNaN(ts.getTime()) ? ts.toLocaleString() : 'Date Unknown';
                 return `
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; margin-bottom: 8px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; border-left: 4px solid #f44;">
@@ -1192,7 +1187,7 @@ async function loadViolations() {
     }
 }
 
-let lastViolationId = -1;
+let lastViolationTimestamp = Date.now();
 let violationPollInterval = null;
 
 async function startup() {
@@ -1223,9 +1218,7 @@ async function startup() {
 function startViolationPolling() {
     if (violationPollInterval) clearInterval(violationPollInterval);
 
-    // Initialize with -1. The first check will set it to the current highest ID
-    // without triggering alerts for old violations.
-    lastViolationId = -1;
+    lastViolationTimestamp = Date.now();
     violationPollInterval = setInterval(checkForNewViolations, 5000);
 }
 
@@ -1243,18 +1236,14 @@ async function checkForNewViolations() {
                 // Check if the most recent violation is newer than our last seen
                 const latest = violations[0];
 
-                if (lastViolationId === -1) {
-                    // First run: just capture the current state
-                    lastViolationId = latest.id;
-                } else if (latest.id > lastViolationId) {
-                    showViolationAlert(latest.name || latest.team_name || 'Team');
-                    lastViolationId = latest.id;
 
-                    // If modal is open, refresh it
-                    const modal = elem("violationsModal");
-                    if (modal && modal.style.display === "flex") {
-                        loadViolations();
-                    }
+                const latestTime = new Date(latest.timestamp + 'Z').getTime();
+
+                if (latestTime > lastViolationTimestamp) {
+                    showViolationAlert(latest.name || latest.team_name || 'Team');
+                    lastViolationTimestamp = latestTime;
+
+                    showViolationsModal();
                 }
             }
         }
@@ -1280,19 +1269,14 @@ function showViolationAlert(teamName) {
     };
 
 
-
+    try {
+        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/951/951-preview.mp3');
+        audio.volume = 0.4;
+        audio.play();
+    } catch (e) { }
 
     setTimeout(() => {
         toast.classList.remove("show");
         if (vBtn) vBtn.classList.remove("alerting");
     }, 6000);
 }
-
-function setPresetAnn(text) {
-    const area = elem("annText");
-    if (area) {
-        area.value = text;
-        area.focus();
-    }
-}
-
