@@ -1269,11 +1269,7 @@ function showViolationAlert(teamName) {
     };
 
 
-    try {
-        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/951/951-preview.mp3');
-        audio.volume = 0.4;
-        audio.play();
-    } catch (e) { }
+
 
     setTimeout(() => {
         toast.classList.remove("show");
