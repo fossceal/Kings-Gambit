@@ -1168,7 +1168,12 @@ async function loadViolations() {
             }
 
             list.innerHTML = violations.map(v => {
-                const ts = v.timestamp ? new Date(v.timestamp + 'Z') : null;
+                // Handle different DB date formats (SQLite datetime vs ISO)
+                let ts = null;
+                if (v.timestamp) {
+                    const isoStr = v.timestamp.replace(' ', 'T') + (v.timestamp.includes('Z') ? '' : 'Z');
+                    ts = new Date(isoStr);
+                }
                 const timeStr = ts && !isNaN(ts.getTime()) ? ts.toLocaleString() : 'Date Unknown';
                 return `
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; margin-bottom: 8px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; border-left: 4px solid #f44;">
@@ -1187,7 +1192,7 @@ async function loadViolations() {
     }
 }
 
-let lastViolationTimestamp = Date.now();
+let lastViolationId = -1;
 let violationPollInterval = null;
 
 async function startup() {
@@ -1218,7 +1223,9 @@ async function startup() {
 function startViolationPolling() {
     if (violationPollInterval) clearInterval(violationPollInterval);
 
-    lastViolationTimestamp = Date.now();
+    // Initialize with -1. The first check will set it to the current highest ID
+    // without triggering alerts for old violations.
+    lastViolationId = -1;
     violationPollInterval = setInterval(checkForNewViolations, 5000);
 }
 
@@ -1236,14 +1243,18 @@ async function checkForNewViolations() {
                 // Check if the most recent violation is newer than our last seen
                 const latest = violations[0];
 
-
-                const latestTime = new Date(latest.timestamp + 'Z').getTime();
-
-                if (latestTime > lastViolationTimestamp) {
+                if (lastViolationId === -1) {
+                    // First run: just capture the current state
+                    lastViolationId = latest.id;
+                } else if (latest.id > lastViolationId) {
                     showViolationAlert(latest.name || latest.team_name || 'Team');
-                    lastViolationTimestamp = latestTime;
+                    lastViolationId = latest.id;
 
-                    showViolationsModal();
+                    // If modal is open, refresh it
+                    const modal = elem("violationsModal");
+                    if (modal && modal.style.display === "flex") {
+                        loadViolations();
+                    }
                 }
             }
         }
@@ -1276,3 +1287,12 @@ function showViolationAlert(teamName) {
         if (vBtn) vBtn.classList.remove("alerting");
     }, 6000);
 }
+
+function setPresetAnn(text) {
+    const area = elem("annText");
+    if (area) {
+        area.value = text;
+        area.focus();
+    }
+}
+

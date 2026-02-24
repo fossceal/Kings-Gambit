@@ -150,6 +150,26 @@
         <div
             style="background:#1a1a1a; border:1px solid #a855f7; border-radius:14px; padding:2rem; width:360px; color:white;">
             <h3 style="margin-top:0;"><i class="fa-solid fa-bullhorn" style="color:#a855f7;"></i> Announcement</h3>
+
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; font-size: 0.8rem;">
+                <button onclick="setPresetAnn('Next round starts soon!')"
+                    style="background:#222; border:1px solid #444; color:#eee; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:inherit;">Next
+                    Round</button>
+                <button onclick="setPresetAnn('Auction time!')"
+                    style="background:#222; border:1px solid #444; color:#eee; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:inherit;">Auction</button>
+                <button onclick="setPresetAnn('Time Up!')"
+                    style="background:#222; border:1px solid #444; color:#eee; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:inherit;">Time
+                    Up</button>
+                <button onclick="setPresetAnn('WOW!')"
+                    style="background:#222; border:1px solid #444; color:#eee; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:inherit;">WOW</button>
+                <button onclick="setPresetAnn('Better luck next time!')"
+                    style="background:#222; border:1px solid #444; color:#eee; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:inherit;">Luck
+                    Next Time</button>
+                <button onclick="setPresetAnn('Thanks for participating!')"
+                    style="background:#222; border:1px solid #444; color:#eee; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:inherit;">Thanks
+                    All</button>
+            </div>
+
             <textarea id="annText" rows="4" placeholder="Type your announcement..."
                 style="width:100%; padding:10px; background:#111; border:1px solid #555; border-radius:8px; color:white; font-size:1rem; resize:vertical; box-sizing:border-box; margin-bottom:12px;"></textarea>
             <div style="display:flex; gap:8px;">
