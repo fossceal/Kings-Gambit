@@ -834,7 +834,8 @@
     outline: none;
 }
 
-/* ─── Admin Gate ────────────────────────────────────────────────────────────── */
+
+/* === Admin Gate === */
 
 #adminGate {
     position: fixed;
@@ -897,7 +898,8 @@
     letter-spacing: 1px;
 }
 
-/* ─── Violations UI ─────────────────────────────────────────────────────────── */
+
+/* === Violations UI === */
 
 .violationsBtn {
     width: 80px;
@@ -1026,7 +1028,8 @@
     }
 }
 
-/* ─── Modal System ─────────────────────────────────────────────────────────── */
+
+/* === Modal System === */
 
 .modal {
     position: fixed;
@@ -1125,7 +1128,8 @@
     transition: all 0.2s;
 }
 
-/* ─── Form Inputs ──────────────────────────────────────────────────────────── */
+
+/* === Form Inputs === */
 
 .form-group {
     margin-bottom: 20px;
@@ -1190,7 +1194,8 @@
     transform: translateY(-1px);
 }
 
-/* ─── Danger Zone ─────────────────────────────────────────────────────────── */
+
+/* === Danger Zone === */
 
 .danger-zone {
     margin-top: 20px;
@@ -1255,7 +1260,8 @@
     transform: translateY(-1px);
 }
 
-/* ─── Upload Feedback ───────────────────────────────────────────────────────── */
+
+/* === Upload Feedback === */
 
 #qstatus_bar {
     width: 100%;

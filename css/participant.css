@@ -1,3 +1,4 @@
+/* === Status Bar HUD === */
 .topBar {
     position: fixed;
     top: 0;
@@ -11,6 +12,7 @@
     z-index: 100;
 }
 
+/* === Timer Component === */
 .timerBox {
     display: flex;
     flex-direction: column;
@@ -43,6 +45,7 @@
     text-shadow: 0 0 15px rgba(255, 77, 77, 0.5);
 }
 
+/* === Team Score Card === */
 #myScoreCard {
     display: flex;
     flex-direction: column;
@@ -67,6 +70,7 @@
     color: #fff;
 }
 
+/* === Options Grid === */
 .optionsGrid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -141,6 +145,7 @@
     color: #ef4444;
 }
 
+/* === Answer Feedback === */
 #feedbackOverlay {
     position: fixed;
     bottom: 40px;
@@ -174,6 +179,7 @@
     color: #000;
 }
 
+/* === Announcement Overlay === */
 .announcement-overlay {
     position: fixed;
     top: 0;
