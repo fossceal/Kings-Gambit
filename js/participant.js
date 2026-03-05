@@ -299,6 +299,18 @@ channel.onmessage = async (event) => {
   if (msg.control === "announcement") showAnnouncement(msg.data?.text || "");
   if (msg.control === "clearAnnouncement") hideAnnouncement();
 
+  if (msg.control === "showHint") {
+    const hintEl = document.getElementById("hintBanner");
+    if (hintEl) {
+      hintEl.querySelector(".hintText").innerText = msg.data?.text || "";
+      hintEl.classList.add("visible");
+    }
+  }
+  if (msg.control === "hideHint") {
+    const hintEl = document.getElementById("hintBanner");
+    if (hintEl) hintEl.classList.remove("visible");
+  }
+
   if (msg.control === "masterFreeze") {
     const overlay = document.getElementById("freezeOverlay");
     const msgEl = document.getElementById("freezeMsg");

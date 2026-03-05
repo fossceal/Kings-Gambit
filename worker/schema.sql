@@ -15,7 +15,8 @@ CREATE TABLE IF NOT EXISTS questions (
   option_b       TEXT NOT NULL,
   option_c       TEXT NOT NULL,
   option_d       TEXT NOT NULL,
-  correct_answer INTEGER NOT NULL      
+  correct_answer INTEGER NOT NULL,
+  hint           TEXT DEFAULT ''
 );
 
 -- Answer submissions (one per team per question)

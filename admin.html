@@ -92,8 +92,8 @@
             <div class="ctrlBtn ann" id="ANN" onclick="showAnnModal()">
                 <i class="fa-solid fa-bullhorn"></i><br>ANN
             </div>
-            <div class="ctrlBtn danger" id="DEL" onclick="ctrlAction('DEL')">
-                <i class="fa-solid fa-trash"></i><br>DEL
+            <div class="ctrlBtn hint" id="HINT" onclick="ctrlAction('HINT')">
+                <i class="fa-solid fa-lightbulb"></i><br>HINT
             </div>
         </div>
 
@@ -150,6 +150,15 @@
         <div
             style="background:#1a1a1a; border:1px solid #a855f7; border-radius:14px; padding:2rem; width:360px; color:white;">
             <h3 style="margin-top:0;"><i class="fa-solid fa-bullhorn" style="color:#a855f7;"></i> Announcement</h3>
+            <div class="ann-presets">
+                <button class="ann-preset-pill" onclick="fillPreset('🔇 Silence your devices')">🔇 Silence</button>
+                <button class="ann-preset-pill" onclick="fillPreset('⏱️ Time is almost up!')">⏱️ Time's up</button>
+                <button class="ann-preset-pill" onclick="fillPreset('📝 Read the question carefully')">📝 Read
+                    carefully</button>
+                <button class="ann-preset-pill" onclick="fillPreset('☕ Short break — 5 minutes')">☕ Break</button>
+                <button class="ann-preset-pill" onclick="fillPreset('🏆 Final round!')">🏆 Final round</button>
+                <button class="ann-preset-pill" onclick="fillPreset('🚫 No discussions allowed')">🚫 No talking</button>
+            </div>
             <textarea id="annText" rows="4" placeholder="Type your announcement..."
                 style="width:100%; padding:10px; background:#111; border:1px solid #555; border-radius:8px; color:white; font-size:1rem; resize:vertical; box-sizing:border-box; margin-bottom:12px;"></textarea>
             <div style="display:flex; gap:8px;">
@@ -259,6 +268,8 @@
             </div>
             <div class="modal-footer">
                 <button class="secondary" onclick="closeViolationsModal()">CLOSE</button>
+                <button class="secondary" style="color:#f44; border-color:rgba(255,60,60,0.3);"
+                    onclick="clearAllViolations()"><i class="fa-solid fa-trash"></i> CLEAR ALL</button>
                 <button class="primary" onclick="loadViolations()">REFRESH</button>
             </div>
         </div>

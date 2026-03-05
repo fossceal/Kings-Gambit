@@ -56,6 +56,9 @@ var actionSequence = [];
 var currentSelections = {};
 var isGameFrozen = false;
 var _timerPaused = false;
+var _adminTimerInterval = null;
+var _adminTimerRemaining = 0;
+var _adminTimerDuration = 0;
 
 var serverStatus = {
     connected: false,
@@ -102,6 +105,7 @@ var buttonStatus = {
                 if (autoStart === "question") {
                     const duration = parseInt(document.getElementById("timerDuration")?.value) || 30;
                     sendMessage({ control: "startTimer", data: { duration } });
+                    startAdminTimer(duration);
                 }
 
                 this.active = true;
@@ -171,6 +175,7 @@ var buttonStatus = {
                 if (autoStart === "options") {
                     const duration = parseInt(document.getElementById("timerDuration")?.value) || 30;
                     sendMessage({ control: "startTimer", data: { duration } });
+                    startAdminTimer(duration);
                 }
 
                 this.active = true;
@@ -186,15 +191,25 @@ var buttonStatus = {
             togglePause();
         }
     },
-    DEL: {
+    HINT: {
         active: false,
-        elem: elem("DEL"),
-        action: async function () {
-            if (!quiz || quiz.length === 0) return;
-            if (!await customConfirm(`Delete Q${qi + 1}: "${quiz[qi].q || quiz[qi].question}"?`)) return;
-            quiz.splice(qi, 1);
-            if (qi >= quiz.length) qi = Math.max(0, quiz.length - 1);
-            updatePreview();
+        elem: elem("HINT"),
+        action: function () {
+            if (this.active) {
+                sendMessage({ control: "hideHint" });
+                this.active = false;
+                syncCtrlBtn("HINT", false);
+            } else {
+                const qData = getCurrentQuestion();
+                const hintText = qData?.hint || "";
+                if (!hintText) {
+                    customAlert("No hint available for this question.");
+                    return;
+                }
+                sendMessage({ control: "showHint", data: { text: hintText } });
+                this.active = true;
+                syncCtrlBtn("HINT", true);
+            }
         }
     },
     qNext: {
@@ -385,7 +400,8 @@ async function handleJSONUpload(event) {
                 option_b: q.option_b || (Array.isArray(q.options) ? q.options[1] : "") || "",
                 option_c: q.option_c || (Array.isArray(q.options) ? q.options[2] : "") || "",
                 option_d: q.option_d || (Array.isArray(q.options) ? q.options[3] : "") || "",
-                correct_answer: typeof q.correct_answer === 'number' ? q.correct_answer : (typeof q.answer === 'number' ? q.answer : 0)
+                correct_answer: typeof q.correct_answer === 'number' ? q.correct_answer : (typeof q.answer === 'number' ? q.answer : 0),
+                hint: q.hint || ""
             }));
 
             setloaderProgress(30, "#a855f7");
@@ -543,7 +559,8 @@ function getCurrentQuestion() {
         q: questionText,
         options: options,
         answer: answer,
-        points: pts
+        points: pts,
+        hint: item.hint || ""
     };
 }
 
@@ -703,6 +720,53 @@ channel.onmessage = function (event) {
 };
 function resetTimer() {
     sendMessage({ control: "resetTimer" });
+    stopAdminTimer();
+}
+function startAdminTimer(seconds) {
+    stopAdminTimer();
+    _adminTimerDuration = seconds;
+    _adminTimerRemaining = seconds;
+    setloaderProgress(100, "#00c3ff");
+    _adminTimerInterval = setInterval(() => {
+        _adminTimerRemaining--;
+        if (_adminTimerRemaining <= 0) {
+            setloaderProgress(100, "#f44");
+            stopAdminTimer();
+            setTimeout(() => setloaderProgress(0), 3000);
+        } else {
+            const pct = (_adminTimerRemaining / _adminTimerDuration) * 100;
+            const color = _adminTimerRemaining <= 5 ? "#f44" : _adminTimerRemaining <= 10 ? "#f90" : "#00c3ff";
+            setloaderProgress(pct, color);
+        }
+    }, 1000);
+}
+function stopAdminTimer() {
+    if (_adminTimerInterval) {
+        clearInterval(_adminTimerInterval);
+        _adminTimerInterval = null;
+    }
+    setloaderProgress(0);
+}
+function pauseAdminTimer() {
+    if (_adminTimerInterval) {
+        clearInterval(_adminTimerInterval);
+        _adminTimerInterval = null;
+    }
+}
+function resumeAdminTimer() {
+    if (_adminTimerRemaining <= 0) return;
+    _adminTimerInterval = setInterval(() => {
+        _adminTimerRemaining--;
+        if (_adminTimerRemaining <= 0) {
+            setloaderProgress(100, "#f44");
+            stopAdminTimer();
+            setTimeout(() => setloaderProgress(0), 3000);
+        } else {
+            const pct = (_adminTimerRemaining / _adminTimerDuration) * 100;
+            const color = _adminTimerRemaining <= 5 ? "#f44" : _adminTimerRemaining <= 10 ? "#f90" : "#00c3ff";
+            setloaderProgress(pct, color);
+        }
+    }, 1000);
 }
 
 function togglePause() {
@@ -716,6 +780,7 @@ function pauseTimer() {
     _timerPaused = true;
     syncCtrlBtn("PAUSE", true);
     if (btn) btn.innerHTML = '<i class="fa-solid fa-play"></i><br>RESUME';
+    pauseAdminTimer();
 }
 
 function resumeTimer() {
@@ -724,10 +789,11 @@ function resumeTimer() {
     _timerPaused = false;
     syncCtrlBtn("PAUSE", false);
     if (btn) btn.innerHTML = '<i class="fa-solid fa-pause"></i><br>PAUSE';
+    resumeAdminTimer();
 }
 function resetControlPad() {
     currentSelections = {};
-    const targetBtns = ["Q", "SC", "ANS", "PAUSE"];
+    const targetBtns = ["Q", "SC", "ANS", "PAUSE", "HINT"];
     targetBtns.forEach(id => {
         if (buttonStatus[id]) {
             buttonStatus[id].active = false;
@@ -743,6 +809,8 @@ function resetControlPad() {
     sendMessage({ control: "hideOptions" });
     sendMessage({ control: "hideAnswer" });
     sendMessage({ control: "stopTimer" });
+    sendMessage({ control: "hideHint" });
+    stopAdminTimer();
 
     const lpq = document.getElementById("lpq");
     const lpa = document.getElementById("lpa");
@@ -1137,6 +1205,10 @@ function clearAnnouncement() {
     const textEl = document.getElementById('annText');
     if (textEl) textEl.value = '';
 }
+function fillPreset(text) {
+    const textEl = document.getElementById('annText');
+    if (textEl) textEl.value = text;
+}
 async function showViolationsModal() {
     const modal = elem("violationsModal");
     if (modal) modal.style.display = "flex";
@@ -1184,6 +1256,24 @@ async function loadViolations() {
     } catch (e) {
         console.error("Violations fetch error:", e);
         list.innerHTML = `<p style="text-align: center; color: #f44; padding: 20px;">Error connecting to server. Check console for details.</p>`;
+    }
+}
+
+async function clearAllViolations() {
+    if (!await customConfirm("Clear ALL violation records? This cannot be undone.")) return;
+    try {
+        const res = await fetch(API + '/api/admin/violations', {
+            method: 'DELETE',
+            headers: { 'X-Admin-Token': getAdminToken() }
+        });
+        if (res.ok) {
+            loadViolations();
+            customAlert("All violations cleared.");
+        } else {
+            customAlert("Failed to clear violations.");
+        }
+    } catch (e) {
+        customAlert("Network error clearing violations.");
     }
 }
 

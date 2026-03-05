@@ -17,7 +17,15 @@
 <body>
 
     <div class="previewBadge"><i class="fa-solid fa-eye"></i> Preview Mode — Read Only</div>
+
+    <div class="previewTimer" id="previewTimerContainer">
+        <span id="previewTimerLabel">TIME</span>
+        <span id="previewTimerValue">--</span>
+    </div>
+
     <div class="previewWrap">
+        <div id="previewHint" class="previewHintBanner"><i class="fa-solid fa-lightbulb"></i> <span
+                id="previewHintText"></span></div>
         <div id="previewPoints" class="pointsBadge">10 PTS</div>
         <div id="previewQ" class="empty">Waiting for question...</div>
         <div id="previewA"></div>

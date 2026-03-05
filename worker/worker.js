@@ -3,7 +3,7 @@ export default {
     const corsHeaders = {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, x-admin-token",
+      "Access-Control-Allow-Headers": "Content-Type, x-admin-token, x-session-token",
       "Content-Type": "application/json"
     };
 
@@ -87,6 +87,48 @@ export default {
         }), { headers: corsHeaders });
       }
 
+      // PUBLIC QUESTIONS (no answers exposed)
+      if (is("/api/questions") && method === "GET") {
+        const { results } = await env.DB.prepare("SELECT id, question_text, option_a, option_b, option_c, option_d FROM questions ORDER BY id").all();
+        return new Response(JSON.stringify(results || []), { headers: corsHeaders });
+      }
+
+      // SUBMIT ANSWER
+      if (is("/api/submit") && method === "POST") {
+        const sessionToken = request.headers.get("x-session-token");
+        if (!sessionToken) {
+          return new Response(JSON.stringify({ error: "Session token required" }), { status: 401, headers: corsHeaders });
+        }
+
+        const { results: teamResults } = await env.DB.prepare("SELECT id, name FROM teams WHERE session_token = ?").bind(sessionToken).all();
+        if (teamResults.length === 0) {
+          return new Response(JSON.stringify({ error: "Invalid session. Please login again." }), { status: 403, headers: corsHeaders });
+        }
+
+        const team = teamResults[0];
+        const { question_id, selected_answer } = await request.json();
+
+        if (!question_id || selected_answer === undefined) {
+          return new Response(JSON.stringify({ error: "question_id and selected_answer required" }), { status: 400, headers: corsHeaders });
+        }
+
+        // Check for duplicate submission
+        const { results: existing } = await env.DB.prepare("SELECT id FROM submissions WHERE team_id = ? AND question_id = ?").bind(team.id, question_id).all();
+        if (existing.length > 0) {
+          return new Response(JSON.stringify({ error: "Already submitted for this question" }), { status: 409, headers: corsHeaders });
+        }
+
+        // Check if answer is correct
+        const { results: qResults } = await env.DB.prepare("SELECT correct_answer FROM questions WHERE id = ?").bind(question_id).all();
+        const isCorrect = qResults.length > 0 && qResults[0].correct_answer === selected_answer ? 1 : 0;
+
+        await env.DB.prepare(
+          "INSERT INTO submissions (team_id, question_id, selected_answer, is_correct) VALUES (?, ?, ?, ?)"
+        ).bind(team.id, question_id, selected_answer, isCorrect).run();
+
+        return new Response(JSON.stringify({ success: true, is_correct: isCorrect === 1 }), { headers: corsHeaders });
+      }
+
       // PUBLIC VIOLATIONS
       if (is("/api/violation") && method === "POST") {
         const { team_id } = await request.json();
@@ -118,9 +160,9 @@ export default {
           // Chunk batching for D1 (limit of ~100 parameters per statements, or just loop)
           for (const q of questions) {
             await env.DB.prepare(`
-              INSERT INTO questions (id, question_text, option_a, option_b, option_c, option_d, correct_answer)
-              VALUES (?, ?, ?, ?, ?, ?, ?)
-            `).bind(crypto.randomUUID(), q.question_text, q.option_a, q.option_b, q.option_c, q.option_d, q.correct_answer).run();
+              INSERT INTO questions (id, question_text, option_a, option_b, option_c, option_d, correct_answer, hint)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `).bind(crypto.randomUUID(), q.question_text, q.option_a, q.option_b, q.option_c, q.option_d, q.correct_answer, q.hint || "").run();
           }
           return new Response(JSON.stringify({ success: true, count: questions.length }), { headers: corsHeaders });
         }
@@ -195,6 +237,11 @@ export default {
         } catch (dbErr) {
           return new Response(JSON.stringify({ error: "D1 Query Failed", details: dbErr.message }), { status: 500, headers: corsHeaders });
         }
+      }
+
+      if (is("/api/admin/violations") && method === "DELETE") {
+        await env.DB.prepare("DELETE FROM violations").run();
+        return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
       }
 
       // SETTINGS (ADMIN)

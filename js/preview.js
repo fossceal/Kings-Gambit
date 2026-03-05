@@ -139,6 +139,31 @@ channel.onmessage = function (event) {
     if (msg.control === "toggleLeaderboard") {
         showLeaderboardOverlay(msg.data?.enabled);
     }
+
+    if (msg.control === "startTimer") {
+        const duration = (msg.data && msg.data.duration) ? msg.data.duration : 30;
+        startPreviewTimer(duration);
+    }
+    if (msg.control === "stopTimer") stopPreviewTimer();
+    if (msg.control === "resetTimer") {
+        stopPreviewTimer();
+        const timerEl = document.getElementById("previewTimerValue");
+        if (timerEl) { timerEl.innerText = "--"; timerEl.classList.remove("urgent"); }
+    }
+    if (msg.control === "pauseTimer") pausePreviewTimer();
+    if (msg.control === "resumeTimer") resumePreviewTimer();
+
+    if (msg.control === "showHint") {
+        const hintEl = document.getElementById("previewHint");
+        if (hintEl) {
+            hintEl.innerHTML = '<i class="fa-solid fa-lightbulb"></i> ' + (msg.data?.text || "");
+            hintEl.classList.add("visible");
+        }
+    }
+    if (msg.control === "hideHint") {
+        const hintEl = document.getElementById("previewHint");
+        if (hintEl) hintEl.classList.remove("visible");
+    }
 };
 
 async function showLeaderboardOverlay(enabled) {
@@ -186,4 +211,64 @@ async function showLeaderboardOverlay(enabled) {
     } catch (e) {
         content.innerHTML = `<div style="text-align:center; padding:20px; color:#f44;"><i class="fa-solid fa-lock"></i><br>${e.message}</div>`;
     }
+}
+
+var _previewTimerInterval = null;
+var _previewTimerPaused = false;
+var _previewTimerRemaining = 0;
+
+function startPreviewTimer(seconds) {
+    stopPreviewTimer();
+    _previewTimerPaused = false;
+    _previewTimerRemaining = seconds;
+    const timerEl = document.getElementById("previewTimerValue");
+    if (!timerEl) return;
+    timerEl.classList.remove("urgent");
+    timerEl.innerText = _previewTimerRemaining;
+    _previewTimerInterval = setInterval(() => {
+        _previewTimerRemaining--;
+        if (_previewTimerRemaining <= 0) {
+            timerEl.innerText = "0";
+            timerEl.classList.add("urgent");
+            stopPreviewTimer();
+        } else {
+            timerEl.innerText = _previewTimerRemaining;
+            if (_previewTimerRemaining <= 5) timerEl.classList.add("urgent");
+            else timerEl.classList.remove("urgent");
+        }
+    }, 1000);
+}
+
+function stopPreviewTimer() {
+    if (_previewTimerInterval) {
+        clearInterval(_previewTimerInterval);
+        _previewTimerInterval = null;
+    }
+}
+
+function pausePreviewTimer() {
+    if (_previewTimerInterval) {
+        clearInterval(_previewTimerInterval);
+        _previewTimerInterval = null;
+        _previewTimerPaused = true;
+    }
+}
+
+function resumePreviewTimer() {
+    if (!_previewTimerPaused) return;
+    _previewTimerPaused = false;
+    const timerEl = document.getElementById("previewTimerValue");
+    _previewTimerInterval = setInterval(() => {
+        _previewTimerRemaining--;
+        if (_previewTimerRemaining <= 0) {
+            if (timerEl) { timerEl.innerText = "0"; timerEl.classList.add("urgent"); }
+            stopPreviewTimer();
+        } else {
+            if (timerEl) {
+                timerEl.innerText = _previewTimerRemaining;
+                if (_previewTimerRemaining <= 5) timerEl.classList.add("urgent");
+                else timerEl.classList.remove("urgent");
+            }
+        }
+    }, 1000);
 }

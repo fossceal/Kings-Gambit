@@ -140,6 +140,49 @@
     color: #a855f7;
 }
 
+.ctrlBtn.hint {
+    border-color: rgba(255, 193, 7, 0.4);
+    color: #ffc107;
+}
+
+.ctrlBtn.hint:hover {
+    background: rgba(255, 193, 7, 0.15);
+}
+
+.ctrlBtn.hint.active {
+    background: rgba(255, 193, 7, 0.2);
+    border-color: #ffc107;
+    color: #ffc107;
+    box-shadow: 0 0 14px rgba(255, 193, 7, 0.25), inset 0 0 10px rgba(255, 193, 7, 0.08);
+}
+
+.ann-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.ann-preset-pill {
+    padding: 6px 12px;
+    background: rgba(168, 85, 247, 0.1);
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    border-radius: 20px;
+    color: #ccc;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Outfit', sans-serif;
+}
+
+.ann-preset-pill:hover {
+    background: rgba(168, 85, 247, 0.25);
+    border-color: #a855f7;
+    color: #fff;
+    transform: translateY(-1px);
+}
+
 #settingsBar {
     position: absolute !important;
     bottom: 0;
