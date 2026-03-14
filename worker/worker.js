@@ -131,6 +131,12 @@ export default {
 
       // PUBLIC VIOLATIONS
       if (is("/api/violation") && method === "POST") {
+        const { results: settings } = await env.DB.prepare("SELECT value FROM settings WHERE key = ?").bind("violations_enabled").all();
+        const violationsEnabled = settings.length === 0 || settings[0].value === "true";
+        if (!violationsEnabled) {
+             return new Response(JSON.stringify({ error: "Violations are currently disabled" }), { status: 403, headers: corsHeaders });
+        }
+
         const { team_id } = await request.json();
         if (!team_id) {
           return new Response(JSON.stringify({ error: "team_id required" }), { status: 400, headers: corsHeaders });
@@ -205,7 +211,10 @@ export default {
       }
 
       if (is("/api/admin/questions/all") && method === "DELETE") {
-        await env.DB.prepare("DELETE FROM questions").run();
+        await env.DB.batch([
+          env.DB.prepare("DELETE FROM submissions"),
+          env.DB.prepare("DELETE FROM questions")
+        ]);
         return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
       }
 

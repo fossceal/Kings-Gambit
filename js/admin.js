@@ -87,8 +87,11 @@ var buttonStatus = {
             if (this.active) {
                 sendMessage({ control: ["QHide"] });
                 sendMessage({ control: "stopTimer" });
-                buttonStatus.SC.active = true;
-                toggle(buttonStatus.SC);
+                if (buttonStatus.SC.active) {
+                    buttonStatus.SC.active = false;
+                    syncCtrlBtn("SC", false);
+                    sendMessage({ control: "hideOptions" });
+                }
                 this.active = false;
                 syncCtrlBtn("Q", false);
                 actionSequence.push("QHide");
@@ -368,6 +371,14 @@ async function loadSettings() {
                     const select = document.getElementById("timerAutoStart");
                     if (select) select.value = value;
                 }
+                if (key === 'violations_enabled') {
+                    const violEl = document.getElementById("violationsEnabled");
+                    if (violEl) violEl.value = value;
+                }
+                if (key === 'quiz_rules') {
+                    const rulesEl = document.getElementById("quizRulesInput");
+                    if (rulesEl) rulesEl.value = value;
+                }
                 if (key === 'leaderboard_enabled') {
                     const enabled = value === 'true';
                     syncLBBtnState(enabled);
@@ -520,6 +531,8 @@ async function saveSettings() {
     const timerDuration = parseInt(document.getElementById("timerDuration").value);
     const pointsPerQ = parseInt(document.getElementById("pointsPerQ").value);
     const timerAutoStart = document.getElementById("timerAutoStart")?.value || "options";
+    const violationsEnabled = document.getElementById("violationsEnabled")?.value || "true";
+    const quizRules = document.getElementById("quizRulesInput")?.value || "";
 
     try {
         const res = await fetch(API + '/api/admin/settings', {
@@ -528,7 +541,13 @@ async function saveSettings() {
                 'Content-Type': 'application/json',
                 'X-Admin-Token': getAdminToken()
             },
-            body: JSON.stringify({ timerDuration, pointsPerQ, timerAutoStart })
+            body: JSON.stringify({ 
+                timerDuration, 
+                pointsPerQ, 
+                timerAutoStart, 
+                violations_enabled: violationsEnabled,
+                quiz_rules: quizRules 
+            })
         });
         if (res.ok) {
             closeSettingsModal();
@@ -658,10 +677,8 @@ channel.onmessage = function (event) {
     if (msg.control === "addScore") {
         const team = teams.find(t => t.id === msg.teamId);
         if (team) {
-            team.score = (team.score || 0) + (msg.points || 0);
-            updateTeamList();
-            broadcastTeams();
-            updateScore();
+            const newScore = (team.score || 0) + (msg.points || 0);
+            updateTeamScore(msg.teamId, newScore);
         }
     }
 
@@ -1055,7 +1072,12 @@ async function updateTeamScore(id, val) {
                 },
                 body: JSON.stringify({ id, score })
             });
-            if (res.ok) t.score = score;
+            if (res.ok) {
+                t.score = score;
+                updateTeamList();
+                broadcastTeams();
+                updateScore();
+            }
         } catch (e) {
             console.error(e);
         }
@@ -1123,8 +1145,14 @@ async function clearAllQuestions() {
             resetControlPad();
             updatePreview();
             customAlert("All questions cleared.");
+        } else {
+            const data = await res.json().catch(() => ({}));
+            customAlert("Error: " + (data.error || "Failed to clear questions"));
         }
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+        console.error(e); 
+        customAlert("Network error clearing questions");
+    }
 }
 
 async function clearAllTeams() {
@@ -1139,8 +1167,14 @@ async function clearAllTeams() {
             updateTeamList();
             broadcastTeams();
             customAlert("All teams cleared.");
+        } else {
+            const data = await res.json().catch(() => ({}));
+            customAlert("Error: " + (data.error || "Failed to clear teams"));
         }
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+        console.error(e); 
+        customAlert("Network error clearing teams");
+    }
 }
 function showTeamModal() {
     const m = document.getElementById("teamModal");
@@ -1296,12 +1330,9 @@ async function startup() {
 
     startViolationPolling();
 
-    const qData = getCurrentQuestion();
-    if (qData) {
-        const broadcastData = { ...qData };
-        delete broadcastData.answer;
-        sendMessage({ control: "setQuestion", data: broadcastData });
-    }
+    // Do not auto-broadcast the current question to participants on startup
+    // Let the admin manually click "Show Question" (Q button) when ready
+
     sendMessage({ control: ["MasterShow"] });
 }
 

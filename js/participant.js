@@ -16,7 +16,11 @@ var connectApp = {
   isRunningSequence: false,
 };
 
+var _violationsDisabled = false;
+
 function pushViolationToQueue() {
+  if (_violationsDisabled) return;
+
   const teamId = localStorage.getItem("team_id");
   if (!teamId) return;
 
@@ -57,10 +61,14 @@ async function syncViolations() {
       keepalive: true
     });
 
-    if (res.ok) {
+    if (res.ok || res.status === 400) {
 
       q.shift();
       localStorage.setItem("violation_queue", JSON.stringify(q));
+    } else if (res.status === 403) {
+      // Violations disabled globally, clear the queue and stop further recording
+      _violationsDisabled = true;
+      localStorage.setItem("violation_queue", JSON.stringify([]));
     }
   } catch (e) {
 
@@ -119,8 +127,16 @@ async function loadQuestions() {
     if (res.ok) {
       quiz = await res.json();
     }
+    const settingsRes = await fetch(API + "/api/settings");
+    if (settingsRes.ok) {
+        const settings = await settingsRes.json();
+        if (settings.quiz_rules) {
+            const rulesEl = document.getElementById("rulesContent");
+            if (rulesEl) rulesEl.innerText = settings.quiz_rules;
+        }
+    }
   } catch (e) {
-    console.warn("Error loading questions:", e);
+    console.warn("Error loading questions/settings:", e);
   }
 }
 ping.onmessage = async (event) => {
@@ -217,6 +233,16 @@ channel.onmessage = async (event) => {
 
     Q("set", qText);
     window._currentQuestionId = data.id || null;
+    
+    const pointsDisp = document.getElementById("qPointsDisp");
+    if (pointsDisp) {
+        if (data.points !== undefined) {
+             pointsDisp.innerText = data.points + " PTS";
+             pointsDisp.style.display = "block";
+        } else {
+             pointsDisp.style.display = "none";
+        }
+    }
 
     for (let i = 0; i < 4; i++) {
       const btn = document.getElementById("opt" + i);
@@ -322,17 +348,21 @@ channel.onmessage = async (event) => {
     if (overlay) overlay.style.display = "none";
   }
   if (msg.control === "teamFreeze") {
-    if (msg.data?.teamId === localStorage.getItem("selectedTeamId")) {
+    const myId = localStorage.getItem("team_id") || localStorage.getItem("selectedTeamId");
+    if (msg.data?.teamId == myId) {
       const overlay = document.getElementById("freezeOverlay");
       const msgEl = document.getElementById("freezeMsg");
       if (msgEl) msgEl.innerText = "The administrator has paused your team.";
       if (overlay) overlay.style.display = "flex";
+      pauseTimer();
     }
   }
   if (msg.control === "teamUnfreeze") {
-    if (msg.data?.teamId === localStorage.getItem("selectedTeamId")) {
+    const myId = localStorage.getItem("team_id") || localStorage.getItem("selectedTeamId");
+    if (msg.data?.teamId == myId) {
       const overlay = document.getElementById("freezeOverlay");
       if (overlay) overlay.style.display = "none";
+      resumeTimer();
     }
   }
 
@@ -342,9 +372,9 @@ channel.onmessage = async (event) => {
 
   if (msg.control === "refreshScore") {
     if (msg.data && Array.isArray(msg.data)) {
-      const myTeamId = localStorage.getItem("selectedTeamId");
+      const myTeamId = localStorage.getItem("team_id") || localStorage.getItem("selectedTeamId");
       if (myTeamId) {
-        const myTeam = msg.data.find(t => t.id === myTeamId);
+        const myTeam = msg.data.find(t => t.id == myTeamId);
         if (myTeam) {
           const scoreEl = document.getElementById("myTeamScore");
           if (scoreEl) scoreEl.innerText = myTeam.score;
@@ -594,10 +624,22 @@ async function showLeaderboardOverlay(enabled) {
 }
 function showRules() {
   const modal = document.getElementById("rulesModal");
-  if (modal) modal.style.display = "flex";
+  if (modal) {
+    modal.style.display = "flex";
+    modal.offsetHeight; // force layout
+    modal.classList.add("active");
+  }
 }
 
 function closeRules() {
   const modal = document.getElementById("rulesModal");
-  if (modal) modal.style.display = "none";
+  if (modal) {
+    modal.classList.remove("active");
+    setTimeout(() => {
+        if (!modal.classList.contains("active")) {
+            modal.style.display = "none";
+        }
+    }, 500);
+  }
 }
+

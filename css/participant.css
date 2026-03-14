@@ -237,6 +237,9 @@
     cursor: pointer;
     transition: all 0.3s;
     margin-left: 10px;
+    z-index: 1000;
+    position: relative;
+    pointer-events: auto;
 }
 
 .rulesBtn:hover {

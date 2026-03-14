@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS settings (
 
 -- Default: leaderboard disabled
 INSERT OR IGNORE INTO settings (key, value) VALUES ('leaderboard_enabled', 'false');
+INSERT OR IGNORE INTO settings (key, value) VALUES ('violations_enabled', 'true');
 
 CREATE TABLE IF NOT EXISTS violations (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
